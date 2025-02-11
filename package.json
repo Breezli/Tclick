@@ -1,0 +1,60 @@
+{
+	"name": "clock",
+	"private": true,
+	"version": "0.0.0",
+	"description": "An Timer application.",
+	"author": "none <15729962898@163.com>",
+	"homepage": "./",
+	"main": "main.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"serve": "vite preview",
+		"electron:dev": "concurrently \"cross-env NODE_ENV=development wait-on http://localhost:5173 && electron .\" \"npm run dev\"",
+		"electron:build": "npm run build && electron-builder && node post-build.js",
+		"start": "npm run electron:dev"
+	},
+	"dependencies": {
+		"vue": "^3.5.13"
+	},
+	"devDependencies": {
+		"@vitejs/plugin-vue": "^5.2.1",
+		"concurrently": "^9.1.2",
+		"cross-env": "^7.0.3",
+		"electron": "^33.3.1",
+		"electron-builder": "^25.1.8",
+		"vite": "^6.0.5",
+		"vite-plugin-html": "^3.2.2",
+		"wait-on": "^8.0.2"
+	},
+	"build": {
+		"productName": "Clock",
+		"appId": "com.example.clock",
+		"directories": {
+			"output": "release"
+		},
+		"files": [
+			"dist/**/*",
+			"node_modules/**/*",
+			"main.js",
+			"preload.js"
+		],
+		"mac": {
+			"target": "dmg",
+			"icon": "dist/installer-icon-256.ico"
+		},
+		"win": {
+			"target": "nsis",
+			"icon": "dist/installer-icon-256.ico"
+		},
+		"linux": {
+			"target": "AppImage",
+			"icon": "dist/installer-icon-256.ico"
+		},
+		"nsis": {
+			"installerIcon": "./public/installer-icon.ico",
+			"oneClick": false,
+			"allowToChangeInstallationDirectory": true
+		}
+	}
+}
