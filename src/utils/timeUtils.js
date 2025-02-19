@@ -1,19 +1,28 @@
 // timeUtils.js
-export const getFormattedTime = () => {
-    const now = new Date();
-    
-    // 获取当前时间的小时、分钟和秒数，并确保它们都是两位数
-    const padZero = (num) => num.toString().padStart(2, '0');
-    const hours = padZero(now.getHours());
-    const minutes = padZero(now.getMinutes());
-    const seconds = padZero(now.getSeconds());
+export const formatTime = (seconds) => {
+	const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
+	const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+	const secs = (seconds % 60).toString().padStart(2, '0');
+	
+	return {
+		hours,
+		minutes,
+		seconds: secs
+	};
+};
 
-    return {
-        hoursFirstChar: hours[0],
-        hoursSecondChar: hours[1],
-        minutesFirstChar: minutes[0],
-        minutesSecondChar: minutes[1],
-        secondsFirstChar: seconds[0],
-        secondsSecondChar: seconds[1],
-    };
-}
+export const splitTimeString = (timeString) => {
+	return {
+		firstChar: timeString[0],
+		secondChar: timeString[1]
+	};
+};
+
+export const getCurrentTime = () => {
+	const now = new Date();
+	return {
+		hours: now.getHours().toString().padStart(2, '0'),
+		minutes: now.getMinutes().toString().padStart(2, '0'),
+		seconds: now.getSeconds().toString().padStart(2, '0')
+	};
+};

@@ -1,5 +1,5 @@
 {
-	"name": "clock",
+	"name": "tclick",
 	"private": true,
 	"version": "0.0.0",
 	"description": "An Timer application.",
@@ -28,8 +28,8 @@
 		"wait-on": "^8.0.2"
 	},
 	"build": {
-		"productName": "Clock",
-		"appId": "com.example.clock",
+		"productName": "Tclick",
+		"appId": "com.example.tclick",
 		"directories": {
 			"output": "release"
 		},
@@ -41,15 +41,15 @@
 		],
 		"mac": {
 			"target": "dmg",
-			"icon": "dist/installer-icon-256.ico"
+			"icon": "./public/installer-icon.ico"
 		},
 		"win": {
 			"target": "nsis",
-			"icon": "dist/installer-icon-256.ico"
+			"icon": "./public/installer-icon.ico"
 		},
 		"linux": {
 			"target": "AppImage",
-			"icon": "dist/installer-icon-256.ico"
+			"icon": "./public/installer-icon.ico"
 		},
 		"nsis": {
 			"installerIcon": "./public/installer-icon.ico",

@@ -1,122 +1,199 @@
 <template>
 	<div class="layouts">
-		<div v-for="(title, index) in titles" :key="index" class="layout">
-			<div></div>
-			<div class="top">
-				<div class="title">{{ title }}</div>
-				<div class="btn" @click="start(index)" :disabled="timers[index].isRunning">开始</div>
-				<div class="btn" @click="stop(index)" :disabled="!timers[index].isRunning">停止</div>
-				<div class="btn" @click="reset(index)" :disabled="timers[index].elapsedTime === 0">重置</div>
+		<div class="add-timer" @click="addTimer">
+			<i class="add-icon">+</i>
+			<span>添加新计时器</span>
+		</div>
+		<div class="timer-grid">
+			<div v-for="(timer, index) in timers" :key="timer.id" class="layout">
+				<div class="layout-top">
+					<div class="top">
+						<input
+							v-if="timer.isEditing"
+							v-model="timer.title"
+							@blur="finishEdit(index)"
+							@keyup.enter="finishEdit(index)"
+							ref="titleInputs"
+							class="title-input" />
+						<div v-else class="title" @dblclick="startEdit(index)">
+							{{ timer.title }}
+						</div>
+						<div class="actions">
+							<button class="action-btn edit" @click="startEdit(index)">
+								<i class="icon">✎</i>
+							</button>
+							<button class="action-btn delete" @click="removeTimer(index)">
+								<i class="icon">×</i>
+							</button>
+						</div>
+					</div>
+				</div>
+				<Flip ref="flipRefs[index]" />
 			</div>
-			<!-- <Flip
-				:hours="timers[index].formattedTime.hours"
-				:minutes="timers[index].formattedTime.minutes"
-				:seconds="timers[index].formattedTime.seconds" /> -->
-			<Timer />
 		</div>
 	</div>
 </template>
 
 <script setup>
-	import { ref, computed } from 'vue'
+	import { ref, nextTick } from 'vue'
 	import Flip from './Flip/index.vue'
-	import Timer from './Timer/index.vue'
 
-	const titles = ['学习时长', '英语时长', '看书时长', '博客时长']
-	const timers = ref([])
+	const timers = ref([{ id: 1, title: '自定义计时器', isEditing: false }])
 
-	for (let i = 0; i < 4; i++) {
+	const titleInputs = ref([])
+	const flipRefs = ref([])
+
+	const addTimer = () => {
+		const newId = timers.value.length
+			? Math.max(...timers.value.map((t) => t.id)) + 1
+			: 1
 		timers.value.push({
-			startTime: null,
-			elapsedTime: 0,
-			isRunning: false,
-			formattedTime: { hours: '00', minutes: '00', seconds: '00' }
+			id: newId,
+			title: `自定义计时器 ${newId}`,
+			isEditing: false,
 		})
 	}
 
-	const start = (index) => {
-		if (!timers.value[index].isRunning) {
-			timers.value[index].startTime = Date.now() - (timers.value[index].startTime ? timers.value[index].startTime : 0)
-			timers.value[index].isRunning = true
-			updateElapsedTime(index)
+	const startEdit = async (index) => {
+		timers.value[index].isEditing = true
+		await nextTick()
+		titleInputs.value[index]?.focus()
+	}
+
+	const finishEdit = (index) => {
+		timers.value[index].isEditing = false
+		if (!timers.value[index].title.trim()) {
+			timers.value[index].title = `计时器 ${timers.value[index].id}`
 		}
 	}
 
-	const stop = (index) => {
-		timers.value[index].isRunning = false
-	}
-
-	const reset = (index) => {
-		timers.value[index].startTime = null
-		timers.value[index].elapsedTime = 0
-		timers.value[index].isRunning = false
-	}
-
-	const updateElapsedTime = (index) => {
-		if (timers.value[index].isRunning) {
-			timers.value[index].elapsedTime = Math.floor((Date.now() - timers.value[index].startTime) / 1000)
-			updateFormattedTime(index)
-			setTimeout(() => updateElapsedTime(index), 1000)
+	const removeTimer = (index) => {
+		if (confirm('确定要删除这个计时器吗？')) {
+			timers.value.splice(index, 1)
 		}
-	}
-
-	const updateFormattedTime = (index) => {
-		const hours = Math.floor(timers.value[index].elapsedTime / 3600).toString().padStart(2, '0')
-		const minutes = Math.floor((timers.value[index].elapsedTime % 3600) / 60).toString().padStart(2, '0')
-		const seconds = (timers.value[index].elapsedTime % 60).toString().padStart(2, '0')
-		timers.value[index].formattedTime = { hours, minutes, seconds }
 	}
 </script>
 
 <style scoped>
 	.layouts {
+		padding: 20px;
 		display: flex;
-		flex-direction: row;
+		flex-direction: column;
+		gap: 20px;
+	}
+
+	.add-timer {
+		border: 2px solid rgb(255, 255, 255);
+		background: rgba(109, 115, 141, 0.1);
+		border-radius: 15px;
+		padding: 15px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		cursor: pointer;
+		transition: all 0.3s ease;
+	}
+
+	.add-timer:hover {
+		border: 2px solid rgba(148, 148, 148, 0.2);
+		background: rgba(245, 245, 245, 0.2);
+	}
+
+	.add-icon {
+		font-size: 24px;
+		color: rgb(0, 0, 0);
+	}
+
+	.timer-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
 		gap: 20px;
 	}
 
 	.layout {
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 15px;
+		padding: 0 20px;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		width: 25%;
+		gap: 15px;
+		animation: fadeIn 0.3s ease;
 	}
 
-	.layout .top {
+	.layout-top {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
+		justify-content: center;
 		width: 100%;
-		background: #fff;
-		border-radius: 20px;
-		padding: 10px;
-		box-sizing: border-box;
 	}
 
-	.layout .top .title {
+	.top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		max-width: 380px;
+	}
+
+	.title {
 		font-size: 20px;
 		font-weight: 700;
-		color: #333;
-		margin-right: auto;
-	}
-
-	.layout .top .btn {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		width: 50px;
-		height: 24px;
-		border-radius: 10px;
-		border: 1px solid #333;
-		font-size: 14px;
-		font-weight: 700;
-		color: #333;
-		padding: 0px 3px;
+		color: rgb(68, 68, 68);
 		cursor: pointer;
 	}
 
-	.layout .top .btn:hover {
-		background: #333;
-		color: #fff;
+	.title-input {
+		background: rgba(255, 255, 255, 0.2);
+		border: none;
+		border-radius: 5px;
+		padding: 5px 10px;
+		font-size: 20px;
+		font-weight: 700;
+		color: rgb(111, 113, 115);
+		width: 200px;
+		outline: none;
+		font-family: 'CustomFont', sans-serif !important;
+	}
+
+	.actions {
+		display: flex;
+		gap: 5px;
+	}
+
+	.action-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 26px;
+		height: 26px;
+		background: rgba(46, 75, 88, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: #465268;
+		cursor: pointer;
+		padding: 5px;
+		border-radius: 5px;
+		transition: all 0.3s ease;
+	}
+
+	.action-btn:hover {
+		border: 1px solid rgba(59, 82, 101, 0.1);
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.icon {
+		color: #132b5a;
+		font-style: normal;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 </style>

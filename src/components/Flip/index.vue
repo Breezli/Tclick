@@ -1,111 +1,131 @@
 <template>
-	<div class="clock">
-		<!-- 小时 -->
-		<div class="flip">
-			<div class="digital" :data-number="hoursFirstChar">{{ hoursFirstChar }}</div>
-		</div>
-		<div class="flip">
-			<div class="digital" :data-number="hoursSecondChar">{{ hoursSecondChar }}</div>
-		</div>
-		<em class="divider">:</em>
-
-		<!-- 分钟 -->
-		<div class="flip">
-			<div class="digital" :data-number="minutesFirstChar">{{ minutesFirstChar }}</div>
-		</div>
-		<div class="flip">
-			<div class="digital" :data-number="minutesSecondChar">{{ minutesSecondChar }}</div>
-		</div>
-		<em class="divider">:</em>
-
-		<!-- 秒 -->
-		<div class="flip">
-			<div class="digital" :data-number="secondsFirstChar">{{ secondsFirstChar }}</div>
-		</div>
-		<div class="flip">
-			<div class="digital" :data-number="secondsSecondChar">{{ secondsSecondChar }}</div>
-		</div>
-	</div>
+  <div class="flip-clock">
+    <div class="clock-display">
+      <!-- 翻牌时钟显示 -->
+      <div class="clock">
+        <FlipUnit :value="hours" label="时" />
+        <em class="divider">:</em>
+        <FlipUnit :value="minutes" label="分" />
+        <em class="divider">:</em>
+        <FlipUnit :value="seconds" label="秒" />
+      </div>
+    </div>
+    
+    <!-- 控制按钮 -->
+    <div class="controls">
+      <button @click="start" :disabled="isRunning" class="control-btn">开始</button>
+      <button @click="stop" :disabled="!isRunning" class="control-btn">停止</button>
+      <button @click="reset" :disabled="elapsedTime === 0" class="control-btn">重置</button>
+    </div>
+  </div>
 </template>
 
 <script setup>
-	import { ref, onMounted, watch } from 'vue';
-	import { getFormattedTime } from '../../utils/timeUtils'; // 确保路径正确
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import FlipUnit from './FlipUnit.vue';
 
-	const hoursFirstChar = ref('');
-	const hoursSecondChar = ref('');
-	const minutesFirstChar = ref('');
-	const minutesSecondChar = ref('');
-	const secondsFirstChar = ref('');
-	const secondsSecondChar = ref('');
+const startTime = ref(null);
+const elapsedTime = ref(0);
+const isRunning = ref(false);
 
-	const updateTime = () => {
-		const time = getFormattedTime();
-		hoursFirstChar.value = time.hoursFirstChar;
-		hoursSecondChar.value = time.hoursSecondChar;
-		minutesFirstChar.value = time.minutesFirstChar;
-		minutesSecondChar.value = time.minutesSecondChar;
-		secondsFirstChar.value = time.secondsFirstChar;
-		secondsSecondChar.value = time.secondsSecondChar;
-	};
+const hours = computed(() => Math.floor(elapsedTime.value / 3600).toString().padStart(2, '0'));
+const minutes = computed(() => Math.floor((elapsedTime.value % 3600) / 60).toString().padStart(2, '0'));
+const seconds = computed(() => (elapsedTime.value % 60).toString().padStart(2, '0'));
 
-	onMounted(() => {
-		updateTime(); // 初始化时更新时间
-		setInterval(updateTime, 1000); // 每秒更新一次时间
-	});
+let intervalId = null;
+
+// Timer 控制逻辑
+const start = () => {
+  if (!isRunning.value) {
+    startTime.value = Date.now() - (elapsedTime.value * 1000);
+    isRunning.value = true;
+    intervalId = setInterval(updateElapsedTime, 1000);
+  }
+};
+
+const stop = () => {
+  clearInterval(intervalId);
+  isRunning.value = false;
+};
+
+const reset = () => {
+  stop();
+  startTime.value = null;
+  elapsedTime.value = 0;
+};
+
+const updateElapsedTime = () => {
+  elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000);
+};
+
+// 页面可见性处理
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') {
+    if (isRunning.value) stop();
+  } else if (document.visibilityState === 'visible') {
+    if (isRunning.value) start();
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  clearInterval(intervalId);
+});
 </script>
 
 <style scoped>
-	body {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		height: 100vh;
-		width: 100vw;
-		background-color: #2c3e50; /* 添加背景色以便于查看 */
-	}
+.flip-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
 
-	.clock {
-		display: flex;
-	}
+.clock-display {
+  background: rgba(46, 45, 45, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-	/* 时钟的分隔 */
-	.clock .divider {
-		font-size: 30px;
-		line-height: 60px;
-		font-style: normal;
-		color: rgb(255, 255, 255); /* 更改为白色以便于查看 */
-		margin: 0 5px;
-	}
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
 
-	/* 时钟的卡片 */
-	.clock .flip {
-		position: relative;
-		width: 40px; /* 稍微增加宽度以确保数字完全显示 */
-		height: 60px; /* 增加高度以确保数字完全显示 */
-		margin: 2px;
-		font-size: 48px; /* 增加字体大小以便于查看 */
-		font-weight: 700;
-		line-height: 60px; /* 确保文本垂直居中 */
-		text-align: center;
-		background: rgb(46, 45, 45);
-		border: 1px solid rgb(34, 33, 33);
-		border-radius: 10px;
-		box-shadow: 0 0 6px rgba(54, 54, 54, 0.5);
-	}
+.divider {
+  font-size: 30px;
+  color: white;
+  font-style: normal;
+}
 
-	/* 时钟上的数字 */
-	.clock .flip .digital {
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		color: white; /* 数字颜色为白色 */
-		background: transparent; /* 背景透明 */
-		border-radius: 10px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.control-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  background: #465268;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'CustomFont', sans-serif !important;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: #29364b;
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 </style>
